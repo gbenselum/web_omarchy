@@ -24,3 +24,4 @@ See the specification documents for details:
 - [Phase 8: Btrfs Snapshots Plugin](phase-08-btrfs-plugin.md)
 - [Phase 9: Updates Plugin](phase-09-updates-plugin.md)
 - [Phase 10: Terminal and Agents Plugin](phase-10-terminal-and-agents.md)
+- [Phase 11: DevOps Lead & Pipeline Architecture](phase-11-devops.md)
