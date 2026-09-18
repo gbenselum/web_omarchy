@@ -1,15 +1,11 @@
 ## The problem
-
-<!-- Describe the problem being solved or the feature being added. Why is this change necessary? -->
+<!-- What is being fixed/added? Link to an issue if applicable. -->
 
 ## The change
-
-<!-- Explain what you have changed. Provide a high-level overview of the implementation. -->
+<!-- How does this PR solve it? Provide details. -->
 
 ## Testing
-
-<!-- Detail how this change was tested. Include results of test suites, manual testing steps, and evidence like logs or screenshots if applicable. -->
+<!-- Detailed list of test suites run and assertions verified (e.g., `test/cli/suite.sh: 12/12`). -->
 
 ## Context
-
-<!-- Optional: Add any additional context, links to related issues, or reasoning behind the chosen approach. -->
+<!-- Links to relevant issues or architectural documents. -->

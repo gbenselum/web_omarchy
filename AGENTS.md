@@ -45,3 +45,10 @@ This repository relies on automated AI agents (subagents) to execute development
   - `release.yml` triggers on tags starting with `v*`. It builds the release binary, web assets, and bundles them into a `.tar.gz` for a GitHub Release.
 - **Pull Requests:** PRs *must* follow the template in `.github/PULL_REQUEST_TEMPLATE.md`, containing "The problem", "The change", "Testing", and "Context".
 - **Arch Packaging:** A standard `PKGBUILD` and `web-omarchy.install` are provided in `packaging/`. Any new binary, config file, or systemd service must be added to the `package()` function in the `PKGBUILD` pointing to standard paths (e.g., `/usr/bin/`, `/etc/omarchy/`).
+## Code Review Checklist (Agent 13)
+All AI agents and human contributors must verify the following before proposing a PR:
+- [ ] **PR Structure:** Does the PR use the standard template ("The problem", "The change", "Testing", "Context")?
+- [ ] **Security:** Are there any hardcoded paths? Is the web process running as `root` (rejected!)? Is `sudo` used correctly/minimalistically?
+- [ ] **Performance:** Are heavy web frameworks (React, Vue, Angular, PatternFly) avoided?
+- [ ] **Style:** Are Bash 5 conditionals used (`[[ ]]`, `(( ))`)? Is the indentation 2 spaces? Is the shebang strictly `#!/bin/bash`? Are Omarchy naming conventions followed?
+- [ ] **Testing:** Were automated tests written and verified?
