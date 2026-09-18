@@ -38,3 +38,11 @@ This repository relies on automated AI agents (subagents) to execute development
 ## Integration & Hardware Rules
 - **Native Tools:** Rely on existing Arch Linux and Omarchy tooling first. Only install new dependencies if native options (like DBus, `systemctl`, `pacman`) cannot fulfill the requirement.
 - **Privilege Escalation:** Never run the entire backend daemon as `root`. Drop privileges immediately, run as a dedicated user, and use `polkit` or explicit `sudo` wrappers for specific commands requiring elevation.
+
+## Code Review Checklist (Agent 13)
+All AI agents and human contributors must verify the following before proposing a PR:
+- [ ] **PR Structure:** Does the PR use the standard template ("The problem", "The change", "Testing", "Context")?
+- [ ] **Security:** Are there any hardcoded paths? Is the web process running as `root` (rejected!)? Is `sudo` used correctly/minimalistically?
+- [ ] **Performance:** Are heavy web frameworks (React, Vue, Angular, PatternFly) avoided?
+- [ ] **Style:** Are Bash 5 conditionals used (`[[ ]]`, `(( ))`)? Is the indentation 2 spaces? Is the shebang strictly `#!/bin/bash`? Are Omarchy naming conventions followed?
+- [ ] **Testing:** Were automated tests written and verified?
