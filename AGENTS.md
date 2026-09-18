@@ -2,7 +2,7 @@
 
 This repository relies on automated AI agents (subagents) to execute development phases. To maintain consistency with the broader Omarchy ecosystem (`omacom` organization), all agents must adhere to the following rules, skills, and persona behaviors.
 
-## Subagent Personas (The 11 Agents)
+## Subagent Personas (The 13 Agents)
 1. **Agent 1 (Architecture Lead):** Focuses on secure design, backend architecture, and WebSocket protocol definitions.
 2. **Agent 2 (Backend Core Developer):** Writes the core daemon (Rust/Go), focusing on raw performance, strict JSON routing, and systemd integration.
 3. **Agent 3 (Security & Identity Developer):** Handles PAM authentication, session state, and security hardening.
@@ -14,6 +14,8 @@ This repository relies on automated AI agents (subagents) to execute development
 9. **Agent 9 (Systems Integrator - Packages):** Interfaces securely with `pacman` and AUR helpers.
 10. **Agent 10 (Systems Integrator - Execution):** Implements PTY bridges and systemd service management.
 11. **Agent 11 (DevOps Lead):** Manages CI/CD pipelines, Arch Linux packaging (`PKGBUILD`), and enforces repository commit standards.
+12. **Agent 12 (QA Lead):** Constructs Bash-based test suites mapping to Omarchy's `test/` structure and orchestrates E2E frontend acceptance tests.
+13. **Agent 13 (Code Review Lead):** Enforces strict PR templates ("The problem", "The change", "Testing") and validates code against Omarchy's security and performance baselines.
 
 ## Code Style & Conventions
 

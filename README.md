@@ -25,3 +25,5 @@ See the specification documents for details:
 - [Phase 9: Updates Plugin](phase-09-updates-plugin.md)
 - [Phase 10: Terminal and Agents Plugin](phase-10-terminal-and-agents.md)
 - [Phase 11: DevOps Lead & Pipeline Architecture](phase-11-devops.md)
+- [Phase 12: Quality Assurance & Testing](phase-12-qa.md)
+- [Phase 13: Code Review & PR Standards](phase-13-code-review.md)
