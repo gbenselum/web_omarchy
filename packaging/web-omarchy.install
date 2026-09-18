@@ -1,0 +1,24 @@
+post_install() {
+  echo "==> web-omarchy installed."
+  echo "==> Enable the service to start automatically:"
+  echo "==>   systemctl enable --now web-omarchy-daemon.service"
+
+  # Future: Create dedicated user if necessary
+  # useradd -r -s /usr/bin/nologin -d /var/empty -c "web-omarchy user" web-omarchy
+}
+
+post_upgrade() {
+  echo "==> web-omarchy upgraded. Restarting service..."
+  systemctl daemon-reload
+  systemctl try-restart web-omarchy-daemon.service
+}
+
+pre_remove() {
+  systemctl stop web-omarchy-daemon.service
+  systemctl disable web-omarchy-daemon.service
+}
+
+post_remove() {
+  systemctl daemon-reload
+  # Future: userdel web-omarchy
+}

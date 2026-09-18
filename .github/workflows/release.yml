@@ -1,0 +1,64 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    name: Build & Release Artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Build Backend Release (Rust)
+        run: |
+          if [ -f Cargo.toml ]; then
+            cargo build --release --target x86_64-unknown-linux-gnu
+            mkdir -p dist
+            cp target/x86_64-unknown-linux-gnu/release/web_omarchy_daemon dist/ || echo "Warning: Binary not found."
+          else
+            echo "No Cargo.toml found. Skipping Rust build."
+          fi
+
+      - name: Prepare Frontend Build
+        # Future-proofing: Build web assets if required
+        run: |
+          if [ -f package.json ]; then
+            npm ci || npm install
+            npm run build || echo "Warning: No build script in package.json."
+            # Assuming built assets go to dist/web
+            cp -R dist/web dist/web_assets || echo "No web assets generated."
+          else
+            echo "No package.json found. Skipping frontend build."
+          fi
+
+      - name: Create Release Tarball
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          mkdir -p release-pkg/web-omarchy-$VERSION
+
+          # Copy built backend
+          if [ -d dist ]; then
+            cp -R dist/* release-pkg/web-omarchy-$VERSION/ || true
+          fi
+
+          # Copy necessary raw scripts/assets
+          # Adjust paths when directory structure is finalised
+          cp -r packaging release-pkg/web-omarchy-$VERSION/ 2>/dev/null || true
+
+          cd release-pkg
+          tar -czvf web-omarchy-$VERSION.tar.gz web-omarchy-$VERSION
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-pkg/*.tar.gz
+          generate_release_notes: true

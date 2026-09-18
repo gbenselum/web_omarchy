@@ -1,0 +1,67 @@
+# Maintainer: Omarchy Team <info@omarchy.com>
+
+pkgname=web-omarchy
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Omarchy Web Management Interface"
+arch=('x86_64')
+url="https://github.com/gbenselum/web_omarchy"
+license=('GPL3')
+depends=('systemd')
+makedepends=('cargo' 'npm' 'git')
+source=("git+$url.git#branch=main")
+sha256sums=('SKIP')
+install="web-omarchy.install"
+
+prepare() {
+  cd "$srcdir/${pkgname/-/_}"
+  # Future: Run npm ci or similar for web assets
+}
+
+build() {
+  cd "$srcdir/${pkgname/-/_}"
+
+  # Build backend
+  if [ -f "Cargo.toml" ]; then
+    cargo build --release --locked
+  fi
+
+  # Build frontend
+  if [ -f "package.json" ]; then
+    npm ci
+    npm run build
+  fi
+}
+
+check() {
+  cd "$srcdir/${pkgname/-/_}"
+
+  # Run backend tests
+  if [ -f "Cargo.toml" ]; then
+    cargo test --release --locked
+  fi
+
+  # Run bash tests
+  if [ -f "test/shell" ]; then
+    bash test/shell
+  fi
+}
+
+package() {
+  cd "$srcdir/${pkgname/-/_}"
+
+  # Install backend daemon
+  if [ -f "target/release/web_omarchy_daemon" ]; then
+    install -Dm755 target/release/web_omarchy_daemon "$pkgdir/usr/bin/web-omarchy-daemon"
+  fi
+
+  # Install frontend assets
+  # Adjust this path based on where the web assets are outputted
+  if [ -d "dist/web" ]; then
+    install -d "$pkgdir/usr/share/web-omarchy/www"
+    cp -r dist/web/* "$pkgdir/usr/share/web-omarchy/www/"
+  fi
+
+  # Install configuration templates/defaults
+  # install -Dm644 config/omarchy.toml "$pkgdir/etc/omarchy/web-omarchy.toml"
+}
