@@ -1,0 +1,16 @@
+name: Agent 13 Code Inspection
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Static Analysis & Security Check
+        run: |
+          chmod +x ./scripts/agent13_inspect.sh
+          ./scripts/agent13_inspect.sh
