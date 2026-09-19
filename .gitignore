@@ -1,0 +1,33 @@
+# Rust
+/target
+**/target
+Cargo.lock
+
+# Node
+node_modules
+/dist
+*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+*.temp
+
+# Pam auth binary
+pam-auth

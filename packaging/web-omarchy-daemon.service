@@ -1,0 +1,49 @@
+[Unit]
+Description=Omarchy Web Management Interface Daemon
+Documentation=https://github.com/gbenselum/web_omarchy
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=web-omarchy
+Group=web-omarchy
+ExecStart=/usr/bin/web-omarchy-daemon
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Allow writing to session directory
+ReadWritePaths=/var/lib/web-omarchy
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Environment
+Environment=RUST_LOG=debug,web_omarchy_daemon=trace
+Environment=OMARCHY_PATH=/usr/share/omarchy
+Environment=TEST_AUTH_BYPASS=1
+
+# Working directory
+WorkingDirectory=/var/lib/web-omarchy
+
+[Install]
+WantedBy=multi-user.target

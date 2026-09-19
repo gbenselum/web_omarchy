@@ -1,0 +1,27 @@
+{
+  "name": "web-omarchy-frontend",
+  "version": "0.1.0",
+  "description": "Omarchy Web Management Interface - Frontend Web TUI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "prettier --check \"src/**/*.{js,css,html}\"",
+    "format": "prettier --write \"src/**/*.{js,css,html}\"",
+    "test": "playwright test"
+  },
+  "keywords": [
+    "omarchy",
+    "web-tui",
+    "system-management"
+  ],
+  "author": "Omarchy Team",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "prettier": "^3.3.0",
+    "terser": "^5.51.2",
+    "vite": "^5.4.0"
+  }
+}
