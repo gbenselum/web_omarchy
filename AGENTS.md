@@ -39,6 +39,12 @@ This repository relies on automated AI agents (subagents) to execute development
 - **Native Tools:** Rely on existing Arch Linux and Omarchy tooling first. Only install new dependencies if native options (like DBus, `systemctl`, `pacman`) cannot fulfill the requirement.
 - **Privilege Escalation:** Never run the entire backend daemon as `root`. Drop privileges immediately, run as a dedicated user, and use `polkit` or explicit `sudo` wrappers for specific commands requiring elevation.
 
+## DevOps & Packaging (Agent 11 Enforced)
+- **CI/CD Pipeline:** GitHub Actions are configured in `.github/workflows/`.
+  - `ci.yml` runs on push and PR to `main`. It enforces `shellcheck` for Bash, Prettier for web, and `cargo clippy`/`cargo fmt` for Rust. It also runs standard test suites (`cargo test`, `bash test/shell`).
+  - `release.yml` triggers on tags starting with `v*`. It builds the release binary, web assets, and bundles them into a `.tar.gz` for a GitHub Release.
+- **Pull Requests:** PRs *must* follow the template in `.github/PULL_REQUEST_TEMPLATE.md`, containing "The problem", "The change", "Testing", and "Context".
+- **Arch Packaging:** A standard `PKGBUILD` and `web-omarchy.install` are provided in `packaging/`. Any new binary, config file, or systemd service must be added to the `package()` function in the `PKGBUILD` pointing to standard paths (e.g., `/usr/bin/`, `/etc/omarchy/`).
 ## Code Review Checklist (Agent 13)
 All AI agents and human contributors must verify the following before proposing a PR:
 - [ ] **PR Structure:** Does the PR use the standard template ("The problem", "The change", "Testing", "Context")?
