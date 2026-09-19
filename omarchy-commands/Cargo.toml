@@ -1,0 +1,38 @@
+[package]
+name = "omarchy-commands"
+version = "0.1.0"
+edition = "2021"
+description = "Omarchy system management commands for web-omarchy"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+nix = "0.28"
+libc = "0.2"
+sysinfo = "0.30"
+[[bin]]
+name = "omarchy-system-info"
+path = "src/system_info.rs"
+[[bin]]
+name = "omarchy-network-status"
+path = "src/network_status.rs"
+[[bin]]
+name = "omarchy-storage-list"
+path = "src/storage_list.rs"
+[[bin]]
+name = "omarchy-btrfs-list"
+path = "src/btrfs_list.rs"
+[[bin]]
+name = "omarchy-pkg-check"
+path = "src/pkg_check.rs"
+[[bin]]
+name = "omarchy-pkg-update"
+path = "src/pkg_update.rs"
+[[bin]]
+name = "omarchy-service-control"
+path = "src/service_control.rs"
+[[bin]]
+name = "omarchy-service-logs"
+path = "src/service_logs.rs"

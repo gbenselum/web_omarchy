@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omarchy Web Management</title>
+  <script type="module" crossorigin src="/assets/main-BC-6QpwI.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/tui-BAFVuGUx.js">
+  <link rel="stylesheet" crossorigin href="/assets/tui-ClhVG6sT.css">
+  <link rel="stylesheet" crossorigin href="/assets/main-CHgHRPKl.css">
+</head>
+<body>
+  <div id="app" class="tui-app">
+    <header class="tui-header" role="banner">
+      <div class="header-left">
+        <span class="tui-logo">◈ OMARCHY WEB</span>
+        <span class="header-separator">│</span>
+        <nav class="tui-tabs" role="tablist" aria-label="Main navigation">
+          <button role="tab" class="tab-btn active" data-tab="dashboard" aria-selected="true">Dashboard</button>
+          <button role="tab" class="tab-btn" data-tab="networking" aria-selected="false">Networking</button>
+          <button role="tab" class="tab-btn" data-tab="storage" aria-selected="false">Storage</button>
+          <button role="tab" class="tab-btn" data-tab="btrfs" aria-selected="false">Btrfs</button>
+          <button role="tab" class="tab-btn" data-tab="updates" aria-selected="false">Updates</button>
+          <button role="tab" class="tab-btn" data-tab="terminal" aria-selected="false">Terminal</button>
+          <button role="tab" class="tab-btn" data-tab="services" aria-selected="false">Services</button>
+        </nav>
+      </div>
+      <div class="header-right">
+        <div class="status-indicators">
+          <span class="status-item" id="connection-status">
+            <span class="status-dot disconnected"></span>
+            <span class="status-text">Disconnected</span>
+          </span>
+          <span class="header-separator">│</span>
+          <span class="status-item" id="system-load">Load: --</span>
+          <span class="header-separator">│</span>
+          <span class="status-item" id="memory-usage">Mem: --</span>
+          <span class="header-separator">│</span>
+          <button class="tui-btn tui-btn-secondary" id="logout-btn">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="tui-main" role="main">
+      <aside class="tui-sidebar" role="complementary" aria-label="Plugin navigation">
+        <nav class="plugin-list" aria-label="Available plugins">
+          <h3 class="sidebar-title">PLUGINS</h3>
+          <ul class="plugin-menu" role="listbox">
+            <li role="option" data-plugin="dashboard" class="active">▸ Dashboard</li>
+            <li role="option" data-plugin="networking">▸ Networking</li>
+            <li role="option" data-plugin="storage">▸ Storage</li>
+            <li role="option" data-plugin="btrfs">▸ Btrfs Snapshots</li>
+            <li role="option" data-plugin="updates">▸ Updates</li>
+            <li role="option" data-plugin="terminal">▸ Terminal</li>
+            <li role="option" data-plugin="services">▸ Services</li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="tui-content">
+        <section class="tui-panel active" id="panel-dashboard" role="region" aria-label="Dashboard">
+          <header class="panel-header">
+            <h2 class="panel-title">System Overview</h2>
+          </header>
+          <div class="dashboard-grid">
+            <div class="metric-card">
+              <div class="metric-label">Hostname</div>
+              <div class="metric-value" id="sys-hostname">--</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Kernel</div>
+              <div class="metric-value" id="sys-kernel">--</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Uptime</div>
+              <div class="metric-value" id="sys-uptime">--</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Packages</div>
+              <div class="metric-value" id="sys-packages">--</div>
+            </div>
+          </div>
+          <div class="panel-section">
+            <h3 class="section-title">Recent Activity</h3>
+            <pre class="activity-log" id="activity-log">Waiting for connection...</pre>
+          </div>
+        </section>
+
+        <section class="tui-panel" id="panel-networking" role="region" aria-label="Networking">
+          <header class="panel-header">
+            <h2 class="panel-title">Network Interfaces</h2>
+            <button class="tui-btn tui-btn-primary" id="refresh-network">⟳ Refresh</button>
+          </header>
+          <div class="table-container">
+            <table class="tui-table" id="network-table">
+              <thead>
+                <tr>
+                  <th>Interface</th>
+                  <th>Status</th>
+                  <th>IP Address</th>
+                  <th>MAC</th>
+                  <th>RX/TX</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="tui-panel" id="panel-storage" role="region" aria-label="Storage">
+          <header class="panel-header">
+            <h2 class="panel-title">Storage Devices</h2>
+            <button class="tui-btn tui-btn-primary" id="refresh-storage">⟳ Refresh</button>
+          </header>
+          <div class="table-container">
+            <table class="tui-table" id="storage-table">
+              <thead>
+                <tr>
+                  <th>Device</th>
+                  <th>Size</th>
+                  <th>Type</th>
+                  <th>Mountpoint</th>
+                  <th>Usage</th>
+                  <th>SMART</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="tui-panel" id="panel-btrfs" role="region" aria-label="Btrfs Snapshots">
+          <header class="panel-header">
+            <h2 class="panel-title">Btrfs Snapshots</h2>
+            <button class="tui-btn tui-btn-primary" id="create-snapshot">+ Create Snapshot</button>
+          </header>
+          <div class="table-container">
+            <table class="tui-table" id="btrfs-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Created</th>
+                  <th>Size</th>
+                  <th>Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="tui-panel" id="panel-updates" role="region" aria-label="System Updates">
+          <header class="panel-header">
+            <h2 class="panel-title">System Updates</h2>
+            <div class="header-actions">
+              <button class="tui-btn tui-btn-primary" id="check-updates">⟳ Check</button>
+              <button class="tui-btn tui-btn-danger" id="apply-updates" disabled>⬇ Apply Updates</button>
+            </div>
+          </header>
+          <div class="table-container">
+            <table class="tui-table" id="updates-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="select-all-updates"></th>
+                  <th>Package</th>
+                  <th>Current</th>
+                  <th>New</th>
+                  <th>Size</th>
+                  <th>Repo</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="update-summary" id="update-summary" hidden>
+            <span class="summary-text">No updates available</span>
+          </div>
+        </section>
+
+        <section class="tui-panel" id="panel-terminal" role="region" aria-label="Terminal">
+          <header class="panel-header">
+            <h2 class="panel-title">Terminal</h2>
+            <div class="header-actions">
+              <button class="tui-btn tui-btn-secondary" id="terminal-clear">Clear</button>
+              <button class="tui-btn tui-btn-secondary" id="terminal-reset">Reset</button>
+            </div>
+          </header>
+          <div class="terminal-container" id="terminal-container">
+            <div class="terminal-loader">Initializing terminal...</div>
+          </div>
+        </section>
+
+        <section class="tui-panel" id="panel-services" role="region" aria-label="System Services">
+          <header class="panel-header">
+            <h2 class="panel-title">System Services</h2>
+            <input type="text" class="tui-input" id="service-filter" placeholder="Filter services...">
+          </header>
+          <div class="table-container">
+            <table class="tui-table" id="services-table">
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Enabled</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="tui-footer" role="contentinfo">
+      <div class="footer-left">
+        <kbd>Tab</kbd> Navigate · <kbd>Enter</kbd> Select · <kbd>Esc</kbd> Back · <kbd>?</kbd> Help
+      </div>
+      <div class="footer-right">
+        <span id="version">web-omarchy v0.1.0</span>
+      </div>
+    </footer>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal-header">
+        <h3 id="modal-title">Confirm</h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </header>
+      <div class="modal-body" id="modal-body"></div>
+      <footer class="modal-footer">
+        <button class="tui-btn tui-btn-secondary modal-cancel">Cancel</button>
+        <button class="tui-btn tui-btn-primary modal-confirm">Confirm</button>
+      </footer>
+    </div>
+  </div>
+
+</body>
+</html>

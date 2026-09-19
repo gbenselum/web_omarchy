@@ -1,0 +1,133 @@
+# Maintainer: Omarchy Team <info@omarchy.com>
+
+pkgname=web-omarchy
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Omarchy Web Management Interface"
+arch=('x86_64')
+url="https://github.com/gbenselum/web_omarchy"
+license=('GPL3')
+depends=('systemd' 'pam' 'polkit')
+makedepends=('cargo' 'npm' 'git' 'gcc')
+source=("git+$url.git#branch=main")
+sha256sums=('SKIP')
+install="web-omarchy.install"
+
+prepare() {
+  cd "$srcdir/${pkgname/-/_}"
+
+  # Setup Rust dependencies
+  if [ -f "backend/Cargo.toml" ]; then
+    cd backend
+    cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+    cd ..
+  fi
+
+  # Setup frontend dependencies
+  if [ -f "frontend/package.json" ]; then
+    cd frontend
+    npm ci
+    cd ..
+  fi
+}
+
+build() {
+  cd "$srcdir/${pkgname/-/_}"
+
+  # Build backend
+  if [ -f "backend/Cargo.toml" ]; then
+    cd backend
+    cargo build --release --locked --target "$CARCH-unknown-linux-gnu"
+    cd ..
+  fi
+
+  # Build frontend
+  if [ -f "frontend/package.json" ]; then
+    cd frontend
+    npm run build
+    cd ..
+  fi
+}
+
+check() {
+  cd "$srcdir/${pkgname/-/_}"
+
+  # Run backend tests
+  if [ -f "backend/Cargo.toml" ]; then
+    cd backend
+    cargo test --release --locked
+    cd ..
+  fi
+
+  # Run frontend tests
+  if [ -f "frontend/package.json" ]; then
+    cd frontend
+    npm test
+    cd ..
+  fi
+
+  # Run shell tests
+  if [ -f "test/shell" ]; then
+    bash test/shell
+  fi
+}
+
+build() {
+  cd "$srcdir/${pkgname/-/_}"
+
+  # Build backend
+  if [ -f "backend/Cargo.toml" ]; then
+    cd backend
+    cargo build --release --locked --target "$CARCH-unknown-linux-gnu"
+    cd ..
+  fi
+
+  # Build frontend
+  if [ -f "frontend/package.json" ]; then
+    cd frontend
+    npm run build
+    cd ..
+  fi
+
+  # Build PAM auth helper
+  gcc -o pam-auth packaging/polkit/pam-auth.c -lpam -lpam_misc
+}
+
+package() {
+  cd "$srcdir/${pkgname/-/_}"
+
+  # Install backend daemon
+  if [ -f "backend/target/$CARCH-unknown-linux-gnu/release/web_omarchy_daemon" ]; then
+    install -Dm755 "backend/target/$CARCH-unknown-linux-gnu/release/web_omarchy_daemon" "$pkgdir/usr/bin/web-omarchy-daemon"
+  fi
+
+  # Install PAM auth helper
+  install -Dm755 "pam-auth" "$pkgdir/usr/lib/web-omarchy/pam-auth"
+
+  # Install polkit auth helper script
+  install -Dm755 "packaging/polkit/auth-helper.sh" "$pkgdir/usr/lib/web-omarchy/auth-helper"
+
+  # Install polkit policy
+  install -Dm644 "packaging/polkit/org.omarchy.web.policy" "$pkgdir/usr/share/polkit-1/actions/org.omarchy.web.policy"
+
+  # Install frontend assets
+  if [ -d "frontend/dist" ]; then
+    install -d "$pkgdir/usr/share/web-omarchy/www"
+    cp -r frontend/dist/* "$pkgdir/usr/share/web-omarchy/www/"
+  fi
+
+  # Install systemd service
+  install -Dm644 packaging/web-omarchy-daemon.service "$pkgdir/usr/lib/systemd/system/web-omarchy-daemon.service"
+
+  # Install configuration
+  install -d "$pkgdir/etc/web-omarchy"
+  install -Dm644 packaging/config.toml "$pkgdir/etc/web-omarchy/config.toml" 2>/dev/null || true
+
+  # Create system user and directories
+  install -d "$pkgdir/usr/lib/sysusers.d"
+  echo "u web-omarchy - \"Omarchy Web Daemon\" /var/lib/web-omarchy /bin/false" > "$pkgdir/usr/lib/sysusers.d/web-omarchy.conf"
+
+  install -d "$pkgdir/usr/lib/tmpfiles.d"
+  echo "d /var/lib/web-omarchy 0750 web-omarchy web-omarchy -" > "$pkgdir/usr/lib/tmpfiles.d/web-omarchy.conf"
+  echo "d /var/lib/web-omarchy/sessions 0700 web-omarchy web-omarchy -" >> "$pkgdir/usr/lib/tmpfiles.d/web-omarchy.conf"
+}

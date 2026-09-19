@@ -1,0 +1,24 @@
+# Web Omarchy Daemon Configuration
+
+[server]
+bind = "0.0.0.0:8080"
+session_dir = "/var/lib/web-omarchy/sessions"
+daemon_user = "omarchy-web"
+
+[auth]
+pam_service = "login"
+session_timeout = 3600
+max_sessions = 100
+
+[security]
+rate_limit_requests = 100
+rate_limit_window = 60
+allowed_origins = ["https://localhost", "https://127.0.0.1"]
+
+[plugins]
+directory = "/usr/share/omarchy/plugins"
+enabled = ["networking", "storage", "btrfs", "updates", "terminal"]
+
+[logging]
+level = "info"
+format = "json"
