@@ -38,9 +38,8 @@ LimitNOFILE=65536
 LimitNPROC=4096
 
 # Environment
-Environment=RUST_LOG=debug,web_omarchy_daemon=trace
+Environment=RUST_LOG=info
 Environment=OMARCHY_PATH=/usr/share/omarchy
-Environment=TEST_AUTH_BYPASS=1
 
 # Working directory
 WorkingDirectory=/var/lib/web-omarchy

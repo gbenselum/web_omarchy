@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tracing::{debug, warn};
@@ -6,6 +6,52 @@ use tracing::{debug, warn};
 use crate::auth::AuthManager;
 use crate::bridge::CommandBridge;
 use crate::protocol::{ClientMessage, ServerMessage};
+
+/// Input validation functions
+mod validation {
+    use anyhow::{anyhow, Result};
+    
+    /// Validate systemd unit name (e.g., "nginx.service", "ssh@.service")
+    pub fn validate_unit_name(unit: &str) -> Result<String> {
+        if unit.is_empty() || unit.len() > 256 {
+            return Err(anyhow!("Invalid unit name"));
+        }
+        // systemd unit names: alphanumeric, dash, underscore, dot, @, :
+        if !unit.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '@' | ':')) {
+            return Err(anyhow!("Invalid unit name characters"));
+        }
+        if !unit.ends_with(".service") && !unit.ends_with(".socket") && !unit.ends_with(".timer") 
+            && !unit.ends_with(".target") && !unit.ends_with(".mount") && !unit.ends_with(".automount") {
+            return Err(anyhow!("Invalid unit type"));
+        }
+        Ok(unit.to_string())
+    }
+
+    /// Validate service action
+    pub fn validate_action(action: &str) -> Result<String> {
+        const VALID_ACTIONS: &[&str] = &["start", "stop", "restart", "enable", "disable", "status"];
+        if !VALID_ACTIONS.contains(&action) {
+            return Err(anyhow!("Invalid action: {}", action));
+        }
+        Ok(action.to_string())
+    }
+
+    /// Validate systemd log lines parameter
+    pub fn validate_log_lines(lines: Option<u32>) -> Option<u32> {
+        lines.map(|l| l.clamp(1, 10000))
+    }
+
+    /// Validate username (alphanumeric, dash, underscore, dot)
+    pub fn validate_username(username: &str) -> Result<String> {
+        if username.is_empty() || username.len() > 32 {
+            return Err(anyhow!("Invalid username"));
+        }
+        if !username.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.')) {
+            return Err(anyhow!("Invalid username characters"));
+        }
+        Ok(username.to_string())
+    }
+}
 
 pub struct MessageRouter {
     bridge: Arc<CommandBridge>,
@@ -69,6 +115,9 @@ impl MessageRouter {
         password: &str,
         tx: mpsc::UnboundedSender<ServerMessage>,
     ) -> Result<()> {
+        // Validate username
+        validation::validate_username(username)?;
+        
         let auth = AuthManager::new("/var/lib/web-omarchy/sessions")?;
         let session = auth.authenticate(username, password).await?;
 
@@ -268,13 +317,11 @@ impl MessageRouter {
         action: &str,
         tx: mpsc::UnboundedSender<ServerMessage>,
     ) -> Result<()> {
-        let valid_actions = ["start", "stop", "restart", "enable", "disable"];
-        if !valid_actions.contains(&action) {
-            let _ = tx.send(ServerMessage::error(&channel_id, format!("Invalid action: {}", action)));
-            return Ok(());
-        }
+        // Validate unit name and action
+        let unit = validation::validate_unit_name(unit)?;
+        let action = validation::validate_action(action)?;
 
-        let output = self.bridge.execute("systemctl", &[action.to_string(), unit.to_string()], None).await?;
+        let output = self.bridge.execute("systemctl", &[action.clone(), unit.clone()], None).await?;
 
         if output.exit_code == 0 {
             let _ = tx.send(ServerMessage::stdout(&channel_id, format!("{} {} completed", unit, action)));
@@ -293,7 +340,11 @@ impl MessageRouter {
         lines: Option<u32>,
         tx: mpsc::UnboundedSender<ServerMessage>,
     ) -> Result<()> {
-        let mut args = vec!["journalctl".to_string(), "-u".to_string(), unit.to_string(), "--no-pager".to_string()];
+        // Validate unit name and lines
+        let unit = validation::validate_unit_name(unit)?;
+        let lines = validation::validate_log_lines(lines);
+
+        let mut args = vec!["journalctl".to_string(), "-u".to_string(), unit, "--no-pager".to_string()];
         if let Some(n) = lines {
             args.push("-n".to_string());
             args.push(n.to_string());

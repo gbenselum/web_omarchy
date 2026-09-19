@@ -156,6 +156,32 @@ impl CommandBridge {
     }
 
     pub fn find_omarchy_command(&self, name: &str) -> Option<String> {
+        // Command allowlist - only allow specific omarchy-* commands
+        const ALLOWED_COMMANDS: &[&str] = &[
+            "omarchy-system-info",
+            "omarchy-network-status",
+            "omarchy-storage-list",
+            "omarchy-btrfs-list",
+            "omarchy-pkg-check",
+            "omarchy-pkg-update",
+            "omarchy-service-control",
+            "omarchy-service-logs",
+            "systemctl",
+            "journalctl",
+            "ip",
+            "findmnt",
+            "smartctl",
+            "snapper",
+            "btrfs",
+            "pacman",
+            "checkupdates",
+        ];
+
+        // Validate command is in allowlist
+        if !ALLOWED_COMMANDS.contains(&name) {
+            return None;
+        }
+
         let paths = [
             "/usr/bin",
             "/usr/local/bin",
@@ -181,12 +207,46 @@ pub struct CommandOutput {
 
 impl CommandBridge {
     pub async fn read_file(&self, path: &str) -> Result<String> {
-        tokio::fs::read_to_string(path).await
+        let safe_path = self.validate_path(path)?;
+        tokio::fs::read_to_string(safe_path).await
             .context("Failed to read file")
     }
 
     pub async fn write_file(&self, path: &str, content: &str) -> Result<()> {
-        tokio::fs::write(path, content).await
+        let safe_path = self.validate_path(path)?;
+        tokio::fs::write(safe_path, content).await
             .context("Failed to write file")
+    }
+
+    /// Validate and canonicalize path to prevent directory traversal
+    /// Only allows paths under /etc/web-omarchy, /var/lib/web-omarchy, /usr/share/web-omarchy
+    fn validate_path(&self, path: &str) -> Result<std::path::PathBuf> {
+        let path = std::path::Path::new(path);
+        
+        // Must be absolute path
+        if !path.is_absolute() {
+            anyhow::bail!("Path must be absolute");
+        }
+
+        // Canonicalize to resolve symlinks and .. components
+        let canonical = path.canonicalize()
+            .context("Failed to canonicalize path")?;
+
+        // Allowed base directories
+        let allowed_bases = [
+            "/etc/web-omarchy",
+            "/var/lib/web-omarchy",
+            "/usr/share/web-omarchy",
+        ];
+
+        let is_allowed = allowed_bases.iter().any(|base| {
+            canonical.starts_with(base)
+        });
+
+        if !is_allowed {
+            anyhow::bail!("Path not in allowed directories: {}", canonical.display());
+        }
+
+        Ok(canonical)
     }
 }

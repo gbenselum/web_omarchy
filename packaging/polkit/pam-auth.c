@@ -4,10 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char *g_password = NULL;
+typedef struct {
+    const char *password;
+} pam_auth_data_t;
 
 int custom_conv(int num_msg, const struct pam_message **msg,
                 struct pam_response **resp, void *appdata_ptr) {
+    pam_auth_data_t *data = (pam_auth_data_t *)appdata_ptr;
     struct pam_response *replies = calloc(num_msg, sizeof(struct pam_response));
     if (!replies) return PAM_CONV_ERR;
 
@@ -15,7 +18,7 @@ int custom_conv(int num_msg, const struct pam_message **msg,
         switch (msg[i]->msg_style) {
             case PAM_PROMPT_ECHO_OFF:
                 // Password prompt - use our password
-                replies[i].resp = strdup(g_password);
+                replies[i].resp = strdup(data->password);
                 replies[i].resp_retcode = 0;
                 break;
             case PAM_PROMPT_ECHO_ON:
@@ -38,11 +41,6 @@ int custom_conv(int num_msg, const struct pam_message **msg,
     return PAM_SUCCESS;
 }
 
-static struct pam_conv conv = {
-    custom_conv,
-    NULL
-};
-
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <username> <password>\n", argv[0]);
@@ -52,8 +50,12 @@ int main(int argc, char *argv[]) {
     const char *username = argv[1];
     const char *password = argv[2];
 
-    // Store password globally for conversation function
-    g_password = (char *)password;
+    pam_auth_data_t auth_data = { .password = password };
+
+    struct pam_conv conv = {
+        custom_conv,
+        &auth_data
+    };
 
     pam_handle_t *pamh = NULL;
     int retval = pam_start("system-auth", username, &conv, &pamh);

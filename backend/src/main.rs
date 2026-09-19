@@ -8,7 +8,9 @@ use axum::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         ConnectInfo, State,
     },
-    response::IntoResponse,
+    http::{header, HeaderMap, HeaderValue, StatusCode},
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
     routing::get,
     Router,
 };
@@ -29,6 +31,7 @@ mod router;
 use bridge::CommandBridge;
 use protocol::{ClientMessage, ServerMessage};
 use router::MessageRouter;
+use auth::{AuthManager, CLEANUP_INTERVAL_SECS};
 
 #[derive(Parser, Debug)]
 #[command(name = "web-omarchy-daemon", version, about = "Omarchy Web Management Interface Daemon")]
@@ -60,6 +63,21 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
+    // Create AuthManager for session cleanup
+    let auth_manager = Arc::new(AuthManager::new(&args.session_dir)?);
+    
+    // Spawn session cleanup task (runs every hour)
+    let auth_cleanup = auth_manager.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(CLEANUP_INTERVAL_SECS));
+        loop {
+            interval.tick().await;
+            if let Err(e) = auth_cleanup.cleanup_expired(None).await {
+                error!("Session cleanup failed: {}", e);
+            }
+        }
+    });
+
     let bridge = Arc::new(CommandBridge::new(args.daemon_user.clone()));
     let router = Arc::new(MessageRouter::new(bridge.clone()));
     let (tx, _rx) = broadcast::channel(1024);
@@ -71,6 +89,7 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .route("/ws", get(ws_handler))
         .fallback_service(ServeDir::new(www_dir).append_index_html_on_directories(true))
+        .layer(middleware::from_fn(security_headers))
         .with_state(state.clone());
 
     let listener = TcpListener::bind(args.bind).await
@@ -105,7 +124,34 @@ async fn ws_handler(
     ws: WebSocketUpgrade,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
 ) -> impl IntoResponse {
+    // Validate Origin header
+    let allowed_origins = [
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "https://localhost:8080",
+    ];
+    
+    if let Some(origin) = headers.get(header::ORIGIN) {
+        let origin_str = origin.to_str().unwrap_or("");
+        if !allowed_origins.iter().any(|&o| origin_str.starts_with(o)) {
+            warn!("Rejected WebSocket connection from unauthorized origin: {}", origin_str);
+            return axum::response::Response::builder()
+                .status(axum::http::StatusCode::FORBIDDEN)
+                .body(axum::body::Body::empty())
+                .unwrap()
+                .into_response();
+        }
+    } else {
+        warn!("Rejected WebSocket connection from {}: missing Origin header", addr);
+        return axum::response::Response::builder()
+            .status(axum::http::StatusCode::FORBIDDEN)
+            .body(axum::body::Body::empty())
+            .unwrap()
+            .into_response();
+    }
+    
     ws.on_upgrade(move |socket| handle_ws(socket, addr, state))
 }
 
@@ -171,4 +217,65 @@ impl AppState {
     async fn shutdown(&self) {
         info!("Shutting down...");
     }
+}
+
+/// Security headers middleware
+async fn security_headers(req: axum::http::Request<axum::body::Body>, next: Next) -> Response {
+    let mut response = next.run(req).await;
+    
+    let headers = response.headers_mut();
+    
+    // Content Security Policy
+    headers.insert(
+        header::CONTENT_SECURITY_POLICY,
+        HeaderValue::from_static(
+            "default-src 'self'; \
+             script-src 'self' 'unsafe-inline'; \
+             style-src 'self' 'unsafe-inline'; \
+             img-src 'self' data:; \
+             font-src 'self'; \
+             connect-src 'self' ws: wss:; \
+             frame-ancestors 'none'; \
+             base-uri 'self'; \
+             form-action 'self'"
+        ),
+    );
+    
+    // Prevent MIME type sniffing
+    headers.insert(
+        header::X_CONTENT_TYPE_OPTIONS,
+        HeaderValue::from_static("nosniff"),
+    );
+    
+    // Prevent clickjacking
+    headers.insert(
+        header::X_FRAME_OPTIONS,
+        HeaderValue::from_static("DENY"),
+    );
+    
+    // XSS protection
+    headers.insert(
+        header::X_XSS_PROTECTION,
+        HeaderValue::from_static("1; mode=block"),
+    );
+    
+    // Referrer policy
+    headers.insert(
+        header::REFERRER_POLICY,
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+    
+    // Permissions policy
+    headers.insert(
+        "Permissions-Policy",
+        HeaderValue::from_static("geolocation=(), microphone=(), camera=()"),
+    );
+    
+    // HSTS (only if using HTTPS)
+    // headers.insert(
+    //     header::STRICT_TRANSPORT_SECURITY,
+    //     HeaderValue::from_static("max-age=31536000; includeSubDomains"),
+    // );
+    
+    response
 }
